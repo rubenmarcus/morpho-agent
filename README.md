@@ -1,20 +1,31 @@
-# Bitte AI Agent NextJS Template
+# Morpho Labs API Agent
 
-This template provides a starting point for creating AI agents using the Bitte Protocol with Next.js. It includes pre-configured endpoints and tools that demonstrate common agent functionalities.
+This project provides an API for interacting with the Morpho Labs protocol on Ethereum, enabling deposit, withdrawal, loan, and data query operations through an AI agent on the Bitte platform.
 
 ## Features
 
-- 🤖 Pre-configured AI agent setup
-- 🛠️ Built-in tools and endpoints:
-  - Blockchain information retrieval
-  - NEAR transaction generation
-  - Reddit frontpage fetching
-  - Twitter share intent generation
-  - Coin flip functionality
-- ⚡ Next.js 14 with App Router
-- 🎨 Tailwind CSS for styling
+- 🏦 **Morpho Vaults (Earn)**:
+  - Token deposits and withdrawals
+  - Available vaults query
+  - Rewards claiming
+  - Detailed vault metrics
+
+- 💰 **Morpho Markets (Borrow)**:
+  - Collateral supply
+  - Loan taking
+  - Loan repayment
+  - Collateral withdrawal
+  - Available markets query
+
+- 📊 **Data Query**:
+  - Vault and market APYs
+  - User positions
+  - Detailed metrics
+
+- ⚡ Next.js 15 with App Router
+- 🔗 Viem integration for Ethereum interactions
 - 📝 TypeScript support
-- 🔄 Hot reload development environment
+- 🔄 Development environment with hot reload
 
 ## Quick Start
 
@@ -22,7 +33,7 @@ This template provides a starting point for creating AI agents using the Bitte P
 2. Configure environment variables (create a `.env` or `.env.local` file)
 
 ```bash
-# Get your API key from https://key.bitte.ai
+# Get your API key at https://key.bitte.ai
 BITTE_API_KEY='your-api-key'
 
 ACCOUNT_ID='your-account.near'
@@ -41,10 +52,9 @@ pnpm run dev
 ```
 
 This will:
-
 - Start your Next.js application
 - Launch make-agent
-- Prompt you to sign a message in Bitte wallet to create an API key
+- Request you to sign a message in the Bitte wallet to create an API key
 - Launch your agent in the Bitte playground
 - Allow you to freely edit and develop your code in the playground environment
 
@@ -54,87 +64,157 @@ This will:
 pnpm run build:dev
 ```
 
-This will build the project and not trigger `make-agent deploy`
+## Available APIs
 
-- using just `build` will trigger make-agent deploy and not work unless you provide your deployed plugin url using the `-u` flag.
+### Morpho Vaults (Earn)
 
-## Available Tools
+#### 1. Vault Deposit
+- Endpoint: `/api/tools/morpho/earn/deposit`
+- Method: GET
+- Parameters:
+  - `vaultAddress`: Morpho vault address
+  - `amount`: Amount of tokens to deposit
+  - `receiver` (optional): Recipient address
 
-The template includes several pre-built tools:
+#### 2. Vault Withdrawal
+- Endpoint: `/api/tools/morpho/earn/withdraw`
+- Method: GET
+- Parameters:
+  - `vaultAddress`: Morpho vault address
+  - `amount` or `shares`: Amount of tokens or shares to withdraw
+  - `receiver` (optional): Recipient address
+  - `owner` (optional): Owner address
 
-### 1. Blockchain Information
+#### 3. Claim Rewards
+- Endpoint: `/api/tools/morpho/earn/claim-rewards`
+- Method: GET
+- Parameters:
+  - `urdAddress`: Universal Rewards Distributor address
+  - `account`: Account address
+  - `claimable`: Claimable amount
+  - `proof`: Merkle proof
 
-- Endpoint: `/api/tools/get-blockchains`
-- Returns a randomized list of blockchain networks
+#### 4. List Available Vaults
+- Endpoint: `/api/tools/morpho/earn/get-vaults`
+- Method: GET
+- Parameters:
+  - `first` (optional): Number of results
+  - `orderBy` (optional): Field to order by
+  - `orderDirection` (optional): Order direction (asc/desc)
 
-### 2. NEAR Transaction Generator
+### Morpho Markets (Borrow)
 
-- Endpoint: `/api/tools/create-near-transaction`
-- Creates NEAR transaction payloads for token transfers
+#### 1. Supply Collateral
+- Endpoint: `/api/tools/morpho/borrow/supply-collateral`
+- Method: GET
+- Parameters:
+  - `morphoAddress`: Morpho contract address
+  - `loanToken`: Loan token address
+  - `collateralToken`: Collateral token address
+  - `oracle`: Oracle address
+  - `irm`: Interest rate model address
+  - `lltv`: Liquidation loan-to-value ratio
+  - `assets`: Amount of tokens to supply
+  - `onBehalf` (optional): Address to supply on behalf of
 
-### 3. EVM Transaction Generator
+#### 2. Take Loan
+- Endpoint: `/api/tools/morpho/borrow/borrow`
+- Method: GET
+- Parameters:
+  - `morphoAddress`: Morpho contract address
+  - `loanToken`: Loan token address
+  - `collateralToken`: Collateral token address
+  - `oracle`: Oracle address
+  - `irm`: Interest rate model address
+  - `lltv`: Liquidation loan-to-value ratio
+  - `assets`: Amount of tokens to borrow
+  - `receiver`: Recipient address
+  - `onBehalf` (optional): Address to borrow on behalf of
 
-- Endpoint: `/api/tools/create-evm-transaction`
-- Creates EVM transaction payloads for native eth transfers
+#### 3. Repay Loan
+- Endpoint: `/api/tools/morpho/borrow/repay`
+- Method: GET
+- Parameters:
+  - `morphoAddress`: Morpho contract address
+  - `loanToken`: Loan token address
+  - `collateralToken`: Collateral token address
+  - `oracle`: Oracle address
+  - `irm`: Interest rate model address
+  - `lltv`: Liquidation loan-to-value ratio
+  - `assets`: Amount of tokens to repay
+  - `onBehalf` (optional): Address to repay on behalf of
 
-### 4. Twitter Share
+#### 4. Withdraw Collateral
+- Endpoint: `/api/tools/morpho/borrow/withdraw-collateral`
+- Method: GET
+- Parameters:
+  - `morphoAddress`: Morpho contract address
+  - `loanToken`: Loan token address
+  - `collateralToken`: Collateral token address
+  - `oracle`: Oracle address
+  - `irm`: Interest rate model address
+  - `lltv`: Liquidation loan-to-value ratio
+  - `assets`: Amount of tokens to withdraw
+  - `receiver`: Recipient address
+  - `onBehalf` (optional): Address to withdraw on behalf of
 
-- Endpoint: `/api/tools/twitter`
-- Generates Twitter share intent URLs
+#### 5. List Available Markets
+- Endpoint: `/api/tools/morpho/borrow/get-markets`
+- Method: GET
+- Parameters:
+  - `first` (optional): Number of results
+  - `orderBy` (optional): Field to order by
+  - `orderDirection` (optional): Order direction (asc/desc)
 
-### 5. Coin Flip
+### Data Query
 
-- Endpoint: `/api/tools/coinflip`
-- Simple random coin flip generator
+#### 1. Query APYs
+- Endpoint: `/api/tools/morpho/data/get-apy`
+- Method: GET
+- Parameters:
+  - `vaultAddress` (optional): Vault address
+  - `marketId` (optional): Market ID
 
-### 6. Get User
+#### 2. Query User Positions
+- Endpoint: `/api/tools/morpho/data/get-user-positions`
+- Method: GET
+- Parameters:
+  - `userAddress`: User address
+  - `type` (optional): Position type (earn, borrow, or all)
 
-- Endpoint: `/api/tools/get-user`
-- Returns the user's account ID
+#### 3. Query Vault Metrics
+- Endpoint: `/api/tools/morpho/data/get-vault-metrics`
+- Method: GET
+- Parameters:
+  - `vaultAddress`: Vault address
+
+#### 4. Query Market Metrics
+- Endpoint: `/api/tools/morpho/data/get-market-metrics`
+- Method: GET
+- Parameters:
+  - `marketId`: Market ID
 
 ## AI Agent Configuration
 
-The template includes a pre-configured AI agent manifest at `/.well-known/ai-plugin.json`. You can customize the agent's behavior by modifying the configuration in `/api/ai-plugins/route.ts`. This route generates and returns the manifest object.
+The template includes a pre-configured AI agent in the `/api/ai-plugin/route.ts` file. You can customize the agent's behavior by modifying the configuration in this file.
 
 ## Deployment
 
 1. Push your code to GitHub
 2. Deploy to Vercel or your preferred hosting platform
 3. Add your `BITTE_API_KEY` to the environment variables
-4. The `make-agent deploy` command will automatically run during build
+4. The `make-agent deploy` command will run automatically during the build process
 
-## Making your own agent
+## Additional Resources
 
-Whether you want to add a tool to this boilerplate or make your own standalone agent tool, here's you'll need:
-
-1. Make sure [`make-agent`](https://github.com/BitteProtocol/make-agent) is installed in your project:
-
-```bash
-pnpm install --D make-agent
-```
-
-2. Set up a manifest following the OpenAPI specification that describes your agent and its paths.
-3. Have an api endpoint with the path `GET /api/ai-plugin` that returns your manifest
-
-## Setting up the manifest
-
-Follow the [OpenAPI Specification](https://swagger.io/specification/#schema-1) to add the following fields in the manifest object:
-
-- `openapi`: The OpenAPI specification version that your manifest is following. Usually this is the latest version.
-- `info`: Object containing information about the agent, namely its 'title', 'description' and 'version'.
-- `servers`: Array of objects containing the urls for the deployed instances of the agent.
-- `paths`: Object containing all your agent's paths and their operations.
-- `"x-mb"`: Our custom field, containing the account id of the owner and an 'assistant' object with the agent's metadata, namely the tools it uses, and additional instructions to guide it.
-
-## Learn More
-
+- [Morpho Labs Documentation](https://docs.morpho.org)
 - [Bitte Protocol Documentation](https://docs.bitte.ai)
 - [Next.js Documentation](https://nextjs.org/docs)
 - [OpenAPI Specification](https://swagger.io/specification/)
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Feel free to submit a Pull Request.
 
 ## License
 

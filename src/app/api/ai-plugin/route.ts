@@ -5,8 +5,8 @@ export async function GET() {
     const pluginData = {
         openapi: "3.0.0",
         info: {
-            title: "Boilerplate",
-            description: "API for the boilerplate",
+            title: "Morpho Labs API",
+            description: "API for interacting with Morpho Labs Vaults and Markets on Ethereum",
             version: "1.0.0",
         },
         servers: [
@@ -17,128 +17,46 @@ export async function GET() {
         "x-mb": {
             "account-id": ACCOUNT_ID,
             assistant: {
-                name: "Your Assistant",
-                description: "An assistant that answers with blockchain information, tells the user's account id, interacts with twitter, creates transaction payloads for NEAR and EVM blockchains, and flips coins.",
-                instructions: "You create near and evm transactions, give blockchain information, tell the user's account id, interact with twitter and flip coins. For blockchain transactions, first generate a transaction payload using the appropriate endpoint (/api/tools/create-near-transaction or /api/tools/create-evm-transaction), then explicitly use the 'generate-transaction' tool for NEAR or 'generate-evm-tx' tool for EVM to actually send the transaction on the client side. For EVM transactions, make sure to provide the 'to' address (recipient) and 'amount' (in ETH) parameters when calling /api/tools/create-evm-transaction. Simply getting the payload from the endpoints is not enough - the corresponding tool must be used to execute the transaction.",
-                tools: [{ type: "generate-transaction" }, { type: "generate-evm-tx" }, { type: "sign-message" }]
+                name: "Morpho Assistant",
+                description: "An assistant that allows interaction with Morpho Labs Vaults and Markets on Ethereum, providing deposit, withdrawal, loan, metrics query, and more functionality.",
+                instructions: "You help users interact with the Morpho Labs protocol on Ethereum. You can provide information about vaults, markets, APYs, and user positions. For blockchain transactions, first generate a transaction payload using the appropriate endpoint (such as /api/tools/morpho/earn/deposit or /api/tools/morpho/borrow/borrow), and then explicitly use the 'generate-evm-tx' tool to send the transaction. Simply getting the payload from the endpoints is not enough - the corresponding tool must be used to execute the transaction.",
+                tools: [{ type: "generate-evm-tx" }, { type: "sign-message" }]
             },
         },
         paths: {
-            "/api/tools/get-blockchains": {
+            // Endpoints for Morpho Vaults (Earn)
+            "/api/tools/morpho/earn/deposit": {
                 get: {
-                    summary: "get blockchain information",
-                    description: "Respond with a list of blockchains",
-                    operationId: "get-blockchains",
-                    responses: {
-                        "200": {
-                            description: "Successful response",
-                            content: {
-                                "application/json": {
-                                    schema: {
-                                        type: "object",
-                                        properties: {
-                                            message: {
-                                                type: "string",
-                                                description: "The list of blockchains",
-                                            },
-                                        },
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
-            },
-            "/api/tools/get-user": {
-                get: {
-                    summary: "get user information",
-                    description: "Returns user account ID and EVM address",
-                    operationId: "get-user",
+                    operationId: "morphoEarnDeposit",
+                    summary: "Generate payload for deposit in Morpho vault",
+                    description: "Generates a transaction payload to deposit tokens in a Morpho vault",
                     parameters: [
                         {
-                            name: "accountId",
-                            in: "query",
-                            required: false,
-                            schema: {
-                                type: "string"
-                            },
-                            description: "The user's account ID"
-                        },
-                        {
-                            name: "evmAddress",
-                            in: "query",
-                            required: false,
-                            schema: {
-                                type: "string"
-                            },
-                            description: "The user's EVM address"
-                        }
-                    ],
-                    responses: {
-                        "200": {
-                            description: "Successful response",
-                            content: {
-                                "application/json": {
-                                    schema: {
-                                        type: "object",
-                                        properties: {
-                                            accountId: {
-                                                type: "string",
-                                                description: "The user's account ID, if you dont have it, return an empty string"
-                                            },
-                                            evmAddress: {
-                                                type: "string",
-                                                description: "The user's EVM address, if you dont have it, return an empty string"
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "/api/tools/twitter": {
-                get: {
-                    operationId: "getTwitterShareIntent",
-                    summary: "Generate a Twitter share intent URL",
-                    description: "Creates a Twitter share intent URL based on provided parameters",
-                    parameters: [
-                        {
-                            name: "text",
+                            name: "vaultAddress",
                             in: "query",
                             required: true,
                             schema: {
                                 type: "string"
                             },
-                            description: "The text content of the tweet"
+                            description: "Morpho vault address"
                         },
                         {
-                            name: "url",
+                            name: "amount",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Amount of tokens to deposit"
+                        },
+                        {
+                            name: "receiver",
                             in: "query",
                             required: false,
                             schema: {
                                 type: "string"
                             },
-                            description: "The URL to be shared in the tweet"
-                        },
-                        {
-                            name: "hashtags",
-                            in: "query",
-                            required: false,
-                            schema: {
-                                type: "string"
-                            },
-                            description: "Comma-separated hashtags for the tweet"
-                        },
-                        {
-                            name: "via",
-                            in: "query",
-                            required: false,
-                            schema: {
-                                type: "string"
-                            },
-                            description: "The Twitter username to attribute the tweet to"
+                            description: "Recipient address (optional)"
                         }
                     ],
                     responses: {
@@ -149,9 +67,35 @@ export async function GET() {
                                     schema: {
                                         type: "object",
                                         properties: {
-                                            twitterIntentUrl: {
-                                                type: "string",
-                                                description: "The generated Twitter share intent URL"
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            data: {
+                                                type: "object",
+                                                properties: {
+                                                    transactionPayload: {
+                                                        type: "object",
+                                                        properties: {
+                                                            to: {
+                                                                type: "string",
+                                                                description: "Target contract address"
+                                                            },
+                                                            value: {
+                                                                type: "string",
+                                                                description: "Value in ETH to be sent"
+                                                            },
+                                                            data: {
+                                                                type: "string",
+                                                                description: "Transaction data (calldata)"
+                                                            }
+                                                        }
+                                                    },
+                                                    description: {
+                                                        type: "string",
+                                                        description: "Transaction description"
+                                                    }
+                                                }
                                             }
                                         }
                                     }
@@ -159,12 +103,16 @@ export async function GET() {
                             }
                         },
                         "400": {
-                            description: "Bad request",
+                            description: "Invalid request",
                             content: {
                                 "application/json": {
                                     schema: {
                                         type: "object",
                                         properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
                                             error: {
                                                 type: "string",
                                                 description: "Error message"
@@ -175,12 +123,16 @@ export async function GET() {
                             }
                         },
                         "500": {
-                            description: "Error response",
+                            description: "Internal error",
                             content: {
                                 "application/json": {
                                     schema: {
                                         type: "object",
                                         properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
                                             error: {
                                                 type: "string",
                                                 description: "Error message"
@@ -193,29 +145,56 @@ export async function GET() {
                     }
                 }
             },
-            "/api/tools/create-near-transaction": {
+            "/api/tools/morpho/earn/withdraw": {
                 get: {
-                    operationId: "createNearTransaction",
-                    summary: "Create a NEAR transaction payload",
-                    description: "Generates a NEAR transaction payload for transferring tokens to be used directly in the generate-tx tool",
+                    operationId: "morphoEarnWithdraw",
+                    summary: "Generate payload for withdrawal from Morpho vault",
+                    description: "Generates a transaction payload to withdraw tokens from a Morpho vault",
                     parameters: [
                         {
-                            name: "receiverId",
+                            name: "vaultAddress",
                             in: "query",
                             required: true,
                             schema: {
                                 type: "string"
                             },
-                            description: "The NEAR account ID of the receiver"
+                            description: "Morpho vault address"
                         },
                         {
                             name: "amount",
                             in: "query",
-                            required: true,
+                            required: false,
                             schema: {
                                 type: "string"
                             },
-                            description: "The amount of NEAR tokens to transfer"
+                            description: "Amount of tokens to withdraw (either amount or shares must be provided)"
+                        },
+                        {
+                            name: "shares",
+                            in: "query",
+                            required: false,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Amount of shares to redeem (either amount or shares must be provided)"
+                        },
+                        {
+                            name: "receiver",
+                            in: "query",
+                            required: false,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Recipient address (optional)"
+                        },
+                        {
+                            name: "owner",
+                            in: "query",
+                            required: false,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Owner address (optional)"
                         }
                     ],
                     responses: {
@@ -226,33 +205,1449 @@ export async function GET() {
                                     schema: {
                                         type: "object",
                                         properties: {
-                                            transactionPayload: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            data: {
                                                 type: "object",
                                                 properties: {
-                                                    receiverId: {
-                                                        type: "string",
-                                                        description: "The receiver's NEAR account ID"
+                                                    transactionPayload: {
+                                                        type: "object",
+                                                        properties: {
+                                                            to: {
+                                                                type: "string",
+                                                                description: "Target contract address"
+                                                            },
+                                                            value: {
+                                                                type: "string",
+                                                                description: "Value in ETH to be sent"
+                                                            },
+                                                            data: {
+                                                                type: "string",
+                                                                description: "Transaction data (calldata)"
+                                                            }
+                                                        }
                                                     },
-                                                    actions: {
+                                                    description: {
+                                                        type: "string",
+                                                        description: "Transaction description"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "400": {
+                            description: "Invalid request",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            error: {
+                                                type: "string",
+                                                description: "Error message"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "500": {
+                            description: "Internal error",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            error: {
+                                                type: "string",
+                                                description: "Error message"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "/api/tools/morpho/earn/claim-rewards": {
+                get: {
+                    operationId: "morphoEarnClaimRewards",
+                    summary: "Generate payload for claiming rewards",
+                    description: "Generates a transaction payload to claim rewards from Morpho vaults",
+                    parameters: [
+                        {
+                            name: "urdAddress",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Universal Rewards Distributor address"
+                        },
+                        {
+                            name: "account",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Account address"
+                        },
+                        {
+                            name: "claimable",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Claimable amount"
+                        },
+                        {
+                            name: "proof",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Merkle proof (JSON array of hexadecimal strings)"
+                        }
+                    ],
+                    responses: {
+                        "200": {
+                            description: "Successful response",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            data: {
+                                                type: "object",
+                                                properties: {
+                                                    transactionPayload: {
+                                                        type: "object",
+                                                        properties: {
+                                                            to: {
+                                                                type: "string",
+                                                                description: "Target contract address"
+                                                            },
+                                                            value: {
+                                                                type: "string",
+                                                                description: "Value in ETH to be sent"
+                                                            },
+                                                            data: {
+                                                                type: "string",
+                                                                description: "Transaction data (calldata)"
+                                                            }
+                                                        }
+                                                    },
+                                                    description: {
+                                                        type: "string",
+                                                        description: "Transaction description"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "400": {
+                            description: "Invalid request",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            error: {
+                                                type: "string",
+                                                description: "Error message"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "500": {
+                            description: "Internal error",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            error: {
+                                                type: "string",
+                                                description: "Error message"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "/api/tools/morpho/earn/get-vaults": {
+                get: {
+                    operationId: "morphoEarnGetVaults",
+                    summary: "List available vaults",
+                    description: "Returns a list of available Morpho vaults",
+                    parameters: [
+                        {
+                            name: "first",
+                            in: "query",
+                            required: false,
+                            schema: {
+                                type: "integer"
+                            },
+                            description: "Number of results to return"
+                        },
+                        {
+                            name: "orderBy",
+                            in: "query",
+                            required: false,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Field to order by"
+                        },
+                        {
+                            name: "orderDirection",
+                            in: "query",
+                            required: false,
+                            schema: {
+                                type: "string",
+                                enum: ["asc", "desc"]
+                            },
+                            description: "Order direction"
+                        }
+                    ],
+                    responses: {
+                        "200": {
+                            description: "Successful response",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            data: {
+                                                type: "object",
+                                                properties: {
+                                                    vaults: {
+                                                        type: "array",
+                                                        items: {
+                                                            type: "object",
+                                                            properties: {
+                                                                address: {
+                                                                    type: "string",
+                                                                    description: "Vault address"
+                                                                },
+                                                                symbol: {
+                                                                    type: "string",
+                                                                    description: "Vault symbol"
+                                                                },
+                                                                name: {
+                                                                    type: "string",
+                                                                    description: "Vault name"
+                                                                },
+                                                                whitelisted: {
+                                                                    type: "boolean",
+                                                                    description: "Indicates if the vault is whitelisted"
+                                                                },
+                                                                asset: {
+                                                                    type: "object",
+                                                                    properties: {
+                                                                        address: {
+                                                                            type: "string",
+                                                                            description: "Asset token address"
+                                                                        },
+                                                                        decimals: {
+                                                                            type: "integer",
+                                                                            description: "Asset token decimals"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                chain: {
+                                                                    type: "string",
+                                                                    description: "Blockchain network"
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    count: {
+                                                        type: "integer",
+                                                        description: "Total number of vaults returned"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "400": {
+                            description: "Invalid request",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            error: {
+                                                type: "string",
+                                                description: "Error message"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "500": {
+                            description: "Internal error",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            error: {
+                                                type: "string",
+                                                description: "Error message"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+
+            // Endpoints for Morpho Markets (Borrow)
+            "/api/tools/morpho/borrow/supply-collateral": {
+                get: {
+                    operationId: "morphoBorrowSupplyCollateral",
+                    summary: "Generate payload for supplying collateral",
+                    description: "Generates a transaction payload to supply collateral in a Morpho market",
+                    parameters: [
+                        {
+                            name: "morphoAddress",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Morpho contract address"
+                        },
+                        {
+                            name: "loanToken",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Loan token address"
+                        },
+                        {
+                            name: "collateralToken",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Collateral token address"
+                        },
+                        {
+                            name: "oracle",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Oracle address"
+                        },
+                        {
+                            name: "irm",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Interest rate model address"
+                        },
+                        {
+                            name: "lltv",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Liquidation loan-to-value ratio"
+                        },
+                        {
+                            name: "assets",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Amount of tokens to supply as collateral"
+                        },
+                        {
+                            name: "onBehalf",
+                            in: "query",
+                            required: false,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Address to supply on behalf of (optional)"
+                        }
+                    ],
+                    responses: {
+                        "200": {
+                            description: "Successful response",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            data: {
+                                                type: "object",
+                                                properties: {
+                                                    transactionPayload: {
+                                                        type: "object",
+                                                        properties: {
+                                                            to: {
+                                                                type: "string",
+                                                                description: "Target contract address"
+                                                            },
+                                                            value: {
+                                                                type: "string",
+                                                                description: "Value in ETH to be sent"
+                                                            },
+                                                            data: {
+                                                                type: "string",
+                                                                description: "Transaction data (calldata)"
+                                                            }
+                                                        }
+                                                    },
+                                                    description: {
+                                                        type: "string",
+                                                        description: "Transaction description"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "400": {
+                            description: "Invalid request",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            error: {
+                                                type: "string",
+                                                description: "Error message"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "500": {
+                            description: "Internal error",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            error: {
+                                                type: "string",
+                                                description: "Error message"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "/api/tools/morpho/borrow/borrow": {
+                get: {
+                    operationId: "morphoBorrowBorrow",
+                    summary: "Generate payload for borrowing",
+                    description: "Generates a transaction payload to borrow from a Morpho market",
+                    parameters: [
+                        {
+                            name: "morphoAddress",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Morpho contract address"
+                        },
+                        {
+                            name: "loanToken",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Loan token address"
+                        },
+                        {
+                            name: "collateralToken",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Collateral token address"
+                        },
+                        {
+                            name: "oracle",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Oracle address"
+                        },
+                        {
+                            name: "irm",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Interest rate model address"
+                        },
+                        {
+                            name: "lltv",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Liquidation loan-to-value ratio"
+                        },
+                        {
+                            name: "assets",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Amount of tokens to borrow"
+                        },
+                        {
+                            name: "receiver",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Recipient address"
+                        },
+                        {
+                            name: "onBehalf",
+                            in: "query",
+                            required: false,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Address to borrow on behalf of (optional)"
+                        }
+                    ],
+                    responses: {
+                        "200": {
+                            description: "Successful response",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            data: {
+                                                type: "object",
+                                                properties: {
+                                                    transactionPayload: {
+                                                        type: "object",
+                                                        properties: {
+                                                            to: {
+                                                                type: "string",
+                                                                description: "Target contract address"
+                                                            },
+                                                            value: {
+                                                                type: "string",
+                                                                description: "Value in ETH to be sent"
+                                                            },
+                                                            data: {
+                                                                type: "string",
+                                                                description: "Transaction data (calldata)"
+                                                            }
+                                                        }
+                                                    },
+                                                    description: {
+                                                        type: "string",
+                                                        description: "Transaction description"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "400": {
+                            description: "Invalid request",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            error: {
+                                                type: "string",
+                                                description: "Error message"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "500": {
+                            description: "Internal error",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            error: {
+                                                type: "string",
+                                                description: "Error message"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "/api/tools/morpho/borrow/repay": {
+                get: {
+                    operationId: "morphoBorrowRepay",
+                    summary: "Generate payload for repaying loan",
+                    description: "Generates a transaction payload to repay a loan in a Morpho market",
+                    parameters: [
+                        {
+                            name: "morphoAddress",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Morpho contract address"
+                        },
+                        {
+                            name: "loanToken",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Loan token address"
+                        },
+                        {
+                            name: "collateralToken",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Collateral token address"
+                        },
+                        {
+                            name: "oracle",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Oracle address"
+                        },
+                        {
+                            name: "irm",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Interest rate model address"
+                        },
+                        {
+                            name: "lltv",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Liquidation loan-to-value ratio"
+                        },
+                        {
+                            name: "assets",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Amount of tokens to repay"
+                        },
+                        {
+                            name: "onBehalf",
+                            in: "query",
+                            required: false,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Address to repay on behalf of (optional)"
+                        }
+                    ],
+                    responses: {
+                        "200": {
+                            description: "Successful response",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            data: {
+                                                type: "object",
+                                                properties: {
+                                                    transactionPayload: {
+                                                        type: "object",
+                                                        properties: {
+                                                            to: {
+                                                                type: "string",
+                                                                description: "Target contract address"
+                                                            },
+                                                            value: {
+                                                                type: "string",
+                                                                description: "Value in ETH to be sent"
+                                                            },
+                                                            data: {
+                                                                type: "string",
+                                                                description: "Transaction data (calldata)"
+                                                            }
+                                                        }
+                                                    },
+                                                    description: {
+                                                        type: "string",
+                                                        description: "Transaction description"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "400": {
+                            description: "Invalid request",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            error: {
+                                                type: "string",
+                                                description: "Error message"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "500": {
+                            description: "Internal error",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            error: {
+                                                type: "string",
+                                                description: "Error message"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "/api/tools/morpho/borrow/withdraw-collateral": {
+                get: {
+                    operationId: "morphoBorrowWithdrawCollateral",
+                    summary: "Generate payload for withdrawing collateral",
+                    description: "Generates a transaction payload to withdraw collateral from a Morpho market",
+                    parameters: [
+                        {
+                            name: "morphoAddress",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Morpho contract address"
+                        },
+                        {
+                            name: "loanToken",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Loan token address"
+                        },
+                        {
+                            name: "collateralToken",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Collateral token address"
+                        },
+                        {
+                            name: "oracle",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Oracle address"
+                        },
+                        {
+                            name: "irm",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Interest rate model address"
+                        },
+                        {
+                            name: "lltv",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Liquidation loan-to-value ratio"
+                        },
+                        {
+                            name: "assets",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Amount of tokens to withdraw"
+                        },
+                        {
+                            name: "receiver",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Recipient address"
+                        },
+                        {
+                            name: "onBehalf",
+                            in: "query",
+                            required: false,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Address to withdraw on behalf of (optional)"
+                        }
+                    ],
+                    responses: {
+                        "200": {
+                            description: "Successful response",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            data: {
+                                                type: "object",
+                                                properties: {
+                                                    transactionPayload: {
+                                                        type: "object",
+                                                        properties: {
+                                                            to: {
+                                                                type: "string",
+                                                                description: "Target contract address"
+                                                            },
+                                                            value: {
+                                                                type: "string",
+                                                                description: "Value in ETH to be sent"
+                                                            },
+                                                            data: {
+                                                                type: "string",
+                                                                description: "Transaction data (calldata)"
+                                                            }
+                                                        }
+                                                    },
+                                                    description: {
+                                                        type: "string",
+                                                        description: "Transaction description"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "400": {
+                            description: "Invalid request",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            error: {
+                                                type: "string",
+                                                description: "Error message"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "500": {
+                            description: "Internal error",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            error: {
+                                                type: "string",
+                                                description: "Error message"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "/api/tools/morpho/borrow/get-markets": {
+                get: {
+                    operationId: "morphoBorrowGetMarkets",
+                    summary: "List available markets",
+                    description: "Returns a list of available Morpho markets",
+                    parameters: [
+                        {
+                            name: "first",
+                            in: "query",
+                            required: false,
+                            schema: {
+                                type: "integer"
+                            },
+                            description: "Number of results to return"
+                        },
+                        {
+                            name: "orderBy",
+                            in: "query",
+                            required: false,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Field to order by"
+                        },
+                        {
+                            name: "orderDirection",
+                            in: "query",
+                            required: false,
+                            schema: {
+                                type: "string",
+                                enum: ["asc", "desc"]
+                            },
+                            description: "Order direction"
+                        }
+                    ],
+                    responses: {
+                        "200": {
+                            description: "Successful response",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            data: {
+                                                type: "object",
+                                                properties: {
+                                                    markets: {
+                                                        type: "array",
+                                                        items: {
+                                                            type: "object",
+                                                            properties: {
+                                                                id: {
+                                                                    type: "string",
+                                                                    description: "Market ID"
+                                                                },
+                                                                loanToken: {
+                                                                    type: "object",
+                                                                    properties: {
+                                                                        address: {
+                                                                            type: "string",
+                                                                            description: "Loan token address"
+                                                                        },
+                                                                        symbol: {
+                                                                            type: "string",
+                                                                            description: "Loan token symbol"
+                                                                        },
+                                                                        decimals: {
+                                                                            type: "integer",
+                                                                            description: "Loan token decimals"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                collateralToken: {
+                                                                    type: "object",
+                                                                    properties: {
+                                                                        address: {
+                                                                            type: "string",
+                                                                            description: "Collateral token address"
+                                                                        },
+                                                                        symbol: {
+                                                                            type: "string",
+                                                                            description: "Collateral token symbol"
+                                                                        },
+                                                                        decimals: {
+                                                                            type: "integer",
+                                                                            description: "Collateral token decimals"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                oracle: {
+                                                                    type: "string",
+                                                                    description: "Oracle address"
+                                                                },
+                                                                irm: {
+                                                                    type: "string",
+                                                                    description: "Interest rate model address"
+                                                                },
+                                                                lltv: {
+                                                                    type: "string",
+                                                                    description: "Liquidation loan-to-value ratio"
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    count: {
+                                                        type: "integer",
+                                                        description: "Total number of markets returned"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "400": {
+                            description: "Invalid request",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            error: {
+                                                type: "string",
+                                                description: "Error message"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "500": {
+                            description: "Internal error",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            error: {
+                                                type: "string",
+                                                description: "Error message"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+
+            // Endpoints for data queries
+            "/api/tools/morpho/data/get-apy": {
+                get: {
+                    operationId: "morphoDataGetApy",
+                    summary: "Query APYs",
+                    description: "Returns APYs for vaults or markets",
+                    parameters: [
+                        {
+                            name: "vaultAddress",
+                            in: "query",
+                            required: false,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Vault address (optional)"
+                        },
+                        {
+                            name: "marketId",
+                            in: "query",
+                            required: false,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Market ID (optional)"
+                        }
+                    ],
+                    responses: {
+                        "200": {
+                            description: "Successful response",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            data: {
+                                                type: "object",
+                                                description: "APY data (format varies depending on parameters)"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "400": {
+                            description: "Invalid request",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            error: {
+                                                type: "string",
+                                                description: "Error message"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "404": {
+                            description: "Not found",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            error: {
+                                                type: "string",
+                                                description: "Error message"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "500": {
+                            description: "Internal error",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            error: {
+                                                type: "string",
+                                                description: "Error message"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "/api/tools/morpho/data/get-user-positions": {
+                get: {
+                    operationId: "morphoDataGetUserPositions",
+                    summary: "Query user positions",
+                    description: "Returns a user's positions in vaults and markets",
+                    parameters: [
+                        {
+                            name: "userAddress",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "User address"
+                        },
+                        {
+                            name: "type",
+                            in: "query",
+                            required: false,
+                            schema: {
+                                type: "string",
+                                enum: ["earn", "borrow", "all"]
+                            },
+                            description: "Position type (earn, borrow, or all)"
+                        }
+                    ],
+                    responses: {
+                        "200": {
+                            description: "Successful response",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            data: {
+                                                type: "object",
+                                                properties: {
+                                                    earnPositions: {
                                                         type: "array",
                                                         items: {
                                                             type: "object",
                                                             properties: {
                                                                 type: {
                                                                     type: "string",
-                                                                    description: "The type of action (e.g., 'Transfer')"
+                                                                    description: "Position type (earn)"
                                                                 },
-                                                                params: {
-                                                                    type: "object",
-                                                                    properties: {
-                                                                        deposit: {
-                                                                            type: "string",
-                                                                            description: "The amount to transfer in yoctoNEAR"
-                                                                        }
-                                                                    }
+                                                                address: {
+                                                                    type: "string",
+                                                                    description: "Vault address"
+                                                                },
+                                                                symbol: {
+                                                                    type: "string",
+                                                                    description: "Vault symbol"
+                                                                },
+                                                                assetSymbol: {
+                                                                    type: "string",
+                                                                    description: "Asset symbol"
+                                                                },
+                                                                assets: {
+                                                                    type: "string",
+                                                                    description: "Amount of tokens"
+                                                                },
+                                                                assetsUsd: {
+                                                                    type: "string",
+                                                                    description: "Value in USD"
+                                                                },
+                                                                shares: {
+                                                                    type: "string",
+                                                                    description: "Amount of shares"
                                                                 }
                                                             }
                                                         }
+                                                    },
+                                                    borrowPositions: {
+                                                        type: "array",
+                                                        items: {
+                                                            type: "object",
+                                                            properties: {
+                                                                type: {
+                                                                    type: "string",
+                                                                    description: "Position type (borrow)"
+                                                                },
+                                                                marketId: {
+                                                                    type: "string",
+                                                                    description: "Market ID"
+                                                                },
+                                                                loanToken: {
+                                                                    type: "object",
+                                                                    properties: {
+                                                                        address: {
+                                                                            type: "string",
+                                                                            description: "Loan token address"
+                                                                        },
+                                                                        symbol: {
+                                                                            type: "string",
+                                                                            description: "Loan token symbol"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                collateralToken: {
+                                                                    type: "object",
+                                                                    properties: {
+                                                                        address: {
+                                                                            type: "string",
+                                                                            description: "Collateral token address"
+                                                                        },
+                                                                        symbol: {
+                                                                            type: "string",
+                                                                            description: "Collateral token symbol"
+                                                                        }
+                                                                    }
+                                                                },
+                                                                borrowed: {
+                                                                    type: "string",
+                                                                    description: "Borrowed amount"
+                                                                },
+                                                                borrowedUsd: {
+                                                                    type: "string",
+                                                                    description: "Borrowed value in USD"
+                                                                },
+                                                                collateral: {
+                                                                    type: "string",
+                                                                    description: "Collateral amount"
+                                                                },
+                                                                collateralUsd: {
+                                                                    type: "string",
+                                                                    description: "Collateral value in USD"
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    totalPositions: {
+                                                        type: "integer",
+                                                        description: "Total number of positions"
                                                     }
                                                 }
                                             }
@@ -262,12 +1657,16 @@ export async function GET() {
                             }
                         },
                         "400": {
-                            description: "Bad request",
+                            description: "Invalid request",
                             content: {
                                 "application/json": {
                                     schema: {
                                         type: "object",
                                         properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
                                             error: {
                                                 type: "string",
                                                 description: "Error message"
@@ -278,12 +1677,16 @@ export async function GET() {
                             }
                         },
                         "500": {
-                            description: "Error response",
+                            description: "Internal error",
                             content: {
                                 "application/json": {
                                     schema: {
                                         type: "object",
                                         properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
                                             error: {
                                                 type: "string",
                                                 description: "Error message"
@@ -296,29 +1699,20 @@ export async function GET() {
                     }
                 }
             },
-            "/api/tools/create-evm-transaction": {
+            "/api/tools/morpho/data/get-vault-metrics": {
                 get: {
-                    operationId: "createEvmTransaction",
-                    summary: "Create EVM transaction",
-                    description: "Generate an EVM transaction payload with specified recipient and amount to be used directly in the generate-evm-tx tool",
+                    operationId: "morphoDataGetVaultMetrics",
+                    summary: "Query vault metrics",
+                    description: "Returns detailed metrics for a specific vault",
                     parameters: [
                         {
-                            name: "to",
+                            name: "vaultAddress",
                             in: "query",
                             required: true,
                             schema: {
                                 type: "string"
                             },
-                            description: "The EVM address of the recipient"
-                        },
-                        {
-                            name: "amount",
-                            in: "query",
-                            required: true,
-                            schema: {
-                                type: "string"
-                            },
-                            description: "The amount of ETH to transfer"
+                            description: "Vault address"
                         }
                     ],
                     responses: {
@@ -329,24 +1723,52 @@ export async function GET() {
                                     schema: {
                                         type: "object",
                                         properties: {
-                                            evmSignRequest: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            data: {
                                                 type: "object",
                                                 properties: {
-                                                    to: {
+                                                    address: {
                                                         type: "string",
-                                                        description: "Receiver address"
+                                                        description: "Vault address"
                                                     },
-                                                    value: {
+                                                    symbol: {
                                                         type: "string",
-                                                        description: "Transaction value"
+                                                        description: "Vault symbol"
                                                     },
-                                                    data: {
+                                                    name: {
                                                         type: "string",
-                                                        description: "Transaction data"
+                                                        description: "Vault name"
                                                     },
-                                                    from: {
+                                                    totalAssets: {
                                                         type: "string",
-                                                        description: "Sender address"
+                                                        description: "Total assets"
+                                                    },
+                                                    totalAssetsUsd: {
+                                                        type: "string",
+                                                        description: "Total assets in USD"
+                                                    },
+                                                    totalSupply: {
+                                                        type: "string",
+                                                        description: "Total supply"
+                                                    },
+                                                    apy: {
+                                                        type: "string",
+                                                        description: "APY"
+                                                    },
+                                                    netApy: {
+                                                        type: "string",
+                                                        description: "Net APY"
+                                                    },
+                                                    netApyWithoutRewards: {
+                                                        type: "string",
+                                                        description: "Net APY without rewards"
+                                                    },
+                                                    dailyApy: {
+                                                        type: "string",
+                                                        description: "Daily APY"
                                                     }
                                                 }
                                             }
@@ -356,12 +1778,36 @@ export async function GET() {
                             }
                         },
                         "400": {
-                            description: "Bad request",
+                            description: "Invalid request",
                             content: {
                                 "application/json": {
                                     schema: {
                                         type: "object",
                                         properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            error: {
+                                                type: "string",
+                                                description: "Error message"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "404": {
+                            description: "Not found",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
                                             error: {
                                                 type: "string",
                                                 description: "Error message"
@@ -372,12 +1818,16 @@ export async function GET() {
                             }
                         },
                         "500": {
-                            description: "Server error",
+                            description: "Internal error",
                             content: {
                                 "application/json": {
                                     schema: {
                                         type: "object",
                                         properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
                                             error: {
                                                 type: "string",
                                                 description: "Error message"
@@ -390,11 +1840,22 @@ export async function GET() {
                     }
                 }
             },
-            "/api/tools/coinflip": {
+            "/api/tools/morpho/data/get-market-metrics": {
                 get: {
-                    summary: "Coin flip",
-                    description: "Flip a coin and return the result (heads or tails)",
-                    operationId: "coinFlip",
+                    operationId: "morphoDataGetMarketMetrics",
+                    summary: "Query market metrics",
+                    description: "Returns detailed metrics for a specific market",
+                    parameters: [
+                        {
+                            name: "marketId",
+                            in: "query",
+                            required: true,
+                            schema: {
+                                type: "string"
+                            },
+                            description: "Market ID"
+                        }
+                    ],
                     responses: {
                         "200": {
                             description: "Successful response",
@@ -403,10 +1864,90 @@ export async function GET() {
                                     schema: {
                                         type: "object",
                                         properties: {
-                                            result: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            data: {
+                                                type: "object",
+                                                properties: {
+                                                    loanToken: {
+                                                        type: "string",
+                                                        description: "Loan token address"
+                                                    },
+                                                    collateralToken: {
+                                                        type: "string",
+                                                        description: "Collateral token address"
+                                                    },
+                                                    totalBorrowed: {
+                                                        type: "string",
+                                                        description: "Total borrowed"
+                                                    },
+                                                    totalBorrowedUsd: {
+                                                        type: "string",
+                                                        description: "Total borrowed in USD"
+                                                    },
+                                                    totalCollateral: {
+                                                        type: "string",
+                                                        description: "Total collateral"
+                                                    },
+                                                    totalCollateralUsd: {
+                                                        type: "string",
+                                                        description: "Total collateral in USD"
+                                                    },
+                                                    borrowRate: {
+                                                        type: "string",
+                                                        description: "Borrow rate"
+                                                    },
+                                                    utilizationRate: {
+                                                        type: "string",
+                                                        description: "Utilization rate"
+                                                    },
+                                                    lltv: {
+                                                        type: "string",
+                                                        description: "Liquidation loan-to-value ratio"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "400": {
+                            description: "Invalid request",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            error: {
                                                 type: "string",
-                                                description: "The result of the coin flip (heads or tails)",
-                                                enum: ["heads", "tails"]
+                                                description: "Error message"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "404": {
+                            description: "Not found",
+                            content: {
+                                "application/json": {
+                                    schema: {
+                                        type: "object",
+                                        properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
+                                            error: {
+                                                type: "string",
+                                                description: "Error message"
                                             }
                                         }
                                     }
@@ -414,12 +1955,16 @@ export async function GET() {
                             }
                         },
                         "500": {
-                            description: "Error response",
+                            description: "Internal error",
                             content: {
                                 "application/json": {
                                     schema: {
                                         type: "object",
                                         properties: {
+                                            success: {
+                                                type: "boolean",
+                                                description: "Indicates if the operation was successful"
+                                            },
                                             error: {
                                                 type: "string",
                                                 description: "Error message"
@@ -431,8 +1976,8 @@ export async function GET() {
                         }
                     }
                 }
-            },
-        },
+            }
+        }
     };
 
     return NextResponse.json(pluginData);
