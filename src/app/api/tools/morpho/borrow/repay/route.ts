@@ -25,7 +25,10 @@ export async function GET(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: 'The parameters morphoAddress, loanToken, collateralToken, oracle, irm, lltv, and assets are required'
+          error: {
+            code: 'MISSING_PARAMETERS',
+            message: 'The parameters morphoAddress, loanToken, collateralToken, oracle, irm, lltv, and assets are required'
+          }
         } as ApiResponse<null>,
         { status: 400 }
       );
@@ -42,7 +45,10 @@ export async function GET(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Invalid address format'
+          error: {
+            code: 'INVALID_ADDRESS',
+            message: 'Invalid address format'
+          }
         } as ApiResponse<null>,
         { status: 400 }
       );
@@ -54,7 +60,10 @@ export async function GET(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: 'The lltv parameter must be a positive number'
+          error: {
+            code: 'INVALID_LLTV',
+            message: 'The lltv parameter must be a positive number'
+          }
         } as ApiResponse<null>,
         { status: 400 }
       );
@@ -65,7 +74,10 @@ export async function GET(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Invalid assets value'
+          error: {
+            code: 'INVALID_ASSETS',
+            message: 'Invalid assets value'
+          }
         } as ApiResponse<null>,
         { status: 400 }
       );
@@ -108,7 +120,10 @@ export async function GET(request: Request) {
     return NextResponse.json(
       {
         success: false,
-        error: 'Failed to generate transaction payload for repayment'
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to generate transaction payload for repayment'
+        }
       } as ApiResponse<null>,
       { status: 500 }
     );

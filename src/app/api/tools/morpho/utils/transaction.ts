@@ -30,7 +30,13 @@ export function encodeMarketParams(params: MarketParams): string {
       { type: 'address', name: 'irm' },
       { type: 'uint256', name: 'lltv' }
     ],
-    [params.loanToken, params.collateralToken, params.oracle, params.irm, params.lltv]
+    [
+      params.loanToken as `0x${string}`,
+      params.collateralToken as `0x${string}`,
+      params.oracle as `0x${string}`,
+      params.irm as `0x${string}`,
+      BigInt(params.lltv)
+    ]
   );
 }
 

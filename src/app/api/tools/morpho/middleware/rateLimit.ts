@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { ERRORS } from '../utils/errors';
+import { ERRORS, createErrorResponse } from '../utils/errors';
 
 // In-memory store for rate limiting (consider using Redis in production)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();

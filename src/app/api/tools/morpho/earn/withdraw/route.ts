@@ -14,8 +14,8 @@ export async function GET(request: Request) {
     const vaultAddress = searchParams.get('vaultAddress');
     const amount = searchParams.get('amount');
     const shares = searchParams.get('shares');
-    const receiver = searchParams.get('receiver') || undefined;
-    const owner = searchParams.get('owner') || undefined;
+    const receiver = searchParams.get('receiver') || '0x0000000000000000000000000000000000000000';
+    const owner = searchParams.get('owner') || '0x0000000000000000000000000000000000000000';
 
     // Required parameters validation
     if (!vaultAddress || (!amount && !shares)) {

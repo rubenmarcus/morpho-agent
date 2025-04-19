@@ -23,7 +23,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const vaultAddress = searchParams.get('vaultAddress');
     const amount = searchParams.get('amount');
-    const receiver = searchParams.get('receiver') || undefined;
+    const receiver = searchParams.get('receiver') || '0x0000000000000000000000000000000000000000';
 
     // Log the request
     logRequest('GET', '/api/tools/morpho/earn/deposit', { vaultAddress, amount, receiver });
@@ -33,7 +33,10 @@ export async function GET(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: 'The parameters vaultAddress and amount are required'
+          error: {
+            code: 'MISSING_PARAMS',
+            message: 'The parameters vaultAddress and amount are required'
+          }
         } as ApiResponse<null>,
         { status: 400 }
       );
@@ -44,7 +47,10 @@ export async function GET(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Invalid vault address format'
+          error: {
+            code: 'INVALID_ADDRESS',
+            message: 'Invalid vault address format'
+          }
         } as ApiResponse<null>,
         { status: 400 }
       );
@@ -55,7 +61,10 @@ export async function GET(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Invalid amount value'
+          error: {
+            code: 'INVALID_AMOUNT',
+            message: 'Invalid amount value'
+          }
         } as ApiResponse<null>,
         { status: 400 }
       );

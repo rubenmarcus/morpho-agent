@@ -23,7 +23,8 @@
     "react-dom": "^19.0.0",
     "redoc": "^2.4.0",
     "vercel-url": "^0.2.6",
-    "viem": "^2.23.15"
+    "viem": "^2.23.15",
+    "winston": "^3.17.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",

@@ -21,7 +21,10 @@ export async function GET(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: 'The parameters urdAddress, account, claimable, and proof are required'
+          error: {
+            code: 'MISSING_PARAMETERS',
+            message: 'The parameters urdAddress, account, claimable, and proof are required'
+          }
         } as ApiResponse<null>,
         { status: 400 }
       );
@@ -35,7 +38,10 @@ export async function GET(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Invalid address format'
+          error: {
+            code: 'INVALID_ADDRESS',
+            message: 'Invalid address format'
+          }
         } as ApiResponse<null>,
         { status: 400 }
       );
@@ -46,27 +52,34 @@ export async function GET(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Invalid claimable amount'
+          error: {
+            code: 'INVALID_CLAIMABLE',
+            message: 'Invalid claimable amount'
+          }
         } as ApiResponse<null>,
         { status: 400 }
       );
     }
 
     // Proof format validation
+    let proofArray: string[];
     try {
-      JSON.parse(proof);
+      proofArray = JSON.parse(proof);
     } catch (error) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Invalid proof format'
+          error: {
+            code: 'INVALID_PROOF',
+            message: 'Invalid proof format'
+          }
         } as ApiResponse<null>,
         { status: 400 }
       );
     }
 
     // Generate calldata for the claim function
-    const data = generateClaimRewardsCalldata(account, claimable, proof);
+    const data = generateClaimRewardsCalldata(account, claimable, proofArray);
 
     // Generate transaction payload
     const transactionPayload = generateTransactionPayload(urdAddress, data);
@@ -90,7 +103,10 @@ export async function GET(request: Request) {
     return NextResponse.json(
       {
         success: false,
-        error: 'Failed to generate transaction payload for rewards claim'
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Failed to generate transaction payload for rewards claim'
+        }
       } as ApiResponse<null>,
       { status: 500 }
     );
