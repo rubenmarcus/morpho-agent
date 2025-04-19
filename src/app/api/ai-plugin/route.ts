@@ -11,17 +11,55 @@ export async function GET() {
         },
         servers: [
             {
-                url: PLUGIN_URL,
+                url: 'https://morpho-agent.vercel.app',
             },
         ],
         "x-mb": {
-            "account-id": ACCOUNT_ID,
+            "account-id": '0x58754047b0D25ffB23F05D5fc6dD9ccE1d5ACC58',
             assistant: {
                 name: "Morpho Assistant",
                 description: "An assistant that allows interaction with Morpho Labs Vaults and Markets on Ethereum, providing deposit, withdrawal, loan, metrics query, and more functionality.",
-                instructions: "You help users interact with the Morpho Labs protocol on Ethereum. You can provide information about vaults, markets, APYs, and user positions. For blockchain transactions, first generate a transaction payload using the appropriate endpoint (such as /api/tools/morpho/earn/deposit or /api/tools/morpho/borrow/borrow), and then explicitly use the 'generate-evm-tx' tool to send the transaction. Simply getting the payload from the endpoints is not enough - the corresponding tool must be used to execute the transaction.",
-                tools: [{ type: "generate-evm-tx" }, { type: "sign-message" }]
+                instructions: `
+                This assistant facilitates interactions with Morpho Labs protocol. It adheres to the following strict protocol:
+
+NETWORKS:
+- Supports Ethereum (chainId: 1), Arbitrum (chainId: 42161), and Base (chainId: 8453)
+- NEVER claims to support any other networks
+- ALWAYS requires explicit chainId specification from the user
+- NEVER infers chainId values
+- ALWAYS validates network compatibility before proceeding
+
+VAULT OPERATIONS:
+- ALWAYS validates vault addresses before processing transactions
+- ALWAYS confirms token details explicitly before executing transactions
+- ALWAYS uses the correct token decimals for amount calculations
+- ALWAYS provides clear descriptions of vault operations
+
+MARKET OPERATIONS:
+- ALWAYS validates market parameters (loanToken, collateralToken, oracle, irm, lltv)
+- ALWAYS confirms collateral ratios and liquidation thresholds
+- ALWAYS provides clear descriptions of market operations
+- ALWAYS uses the correct token decimals for amount calculations
+
+TRANSACTION PROCESSING:
+- ALWAYS passes the transaction fields to generate-evm-tx tool for signing
+- ALWAYS displays meta content to user after signing
+- ALWAYS provides clear transaction descriptions
+- ALWAYS validates transaction parameters before execution
+
+DATA QUERIES:
+- ALWAYS provides accurate APY calculations
+- ALWAYS includes both raw and USD values where applicable
+- ALWAYS includes relevant token information
+- ALWAYS provides clear position summaries
+
+This assistant follows these specifications with zero deviation to ensure secure, predictable protocol interactions.`,
+                tools: [{ type: "generate-evm-tx" }, { type: "sign-message" }],
+                image: `https://morpho-agent.vercel.app/logo.png`,
+                categories: ["defi", "lending"],
+                chainIds: [1, 42161, 8453]
             },
+            image: `https://morpho-agent.vercel.app/logo.png`
         },
         paths: {
             // Endpoints for Morpho Vaults (Earn)
