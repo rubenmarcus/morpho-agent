@@ -1,5 +1,5 @@
 {
-  "name": "agent-next-boilerplate",
+  "name": "morpho-agent",
   "version": "0.1.0",
   "private": true,
   "packageManager": "pnpm@8.15.4",
@@ -8,6 +8,7 @@
     "dev:agent": "next dev",
     "build": "next build",
     "build:deploy": "next build && make-agent deploy -u https://morpho-agent.vercel.app",
+    "update": "next build && make-agent update https://morpho-agent.vercel.app",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
